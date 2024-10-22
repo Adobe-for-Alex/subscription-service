@@ -10,6 +10,9 @@
 то создает новый аккаунт и вызывает webhook,
 что бы уведомить пользователя микросервиса
 
+Сеовис подписок взаимодействует с
+[Adobe API](https://github.com/Adobe-for-Alex/adobe-api)
+
 # API
 
 ## POST `/sessions`
@@ -58,4 +61,9 @@
   "password": "new-account-password"
 }
 ```
+
+# Основные технологии
+
+- [Express](https://www.npmjs.com/package/express)
+- [Prisma](https://www.npmjs.com/package/prisma)
 
