@@ -1,0 +1,15 @@
+name: new issue
+on:
+  issues:
+    types: opened
+jobs:
+  add-research-label:
+    name: add research label
+    runs-on: ubuntu-22.04
+    permissions:
+      issues: write
+    steps:
+      - run: gh issue edit ${{ github.event.issue.number }} --add-label "research"
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_REPO: ${{ github.repository }}
