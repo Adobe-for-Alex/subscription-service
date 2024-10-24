@@ -1,10 +1,13 @@
 {
   "name": "subscription-service",
   "version": "1.0.0",
-  "description": "Микросервис управляющий пользователями Adobe\r и предоставляющие сессионый доступ к подписке.\r В рамках сессии пользователю (не Adobe) по мере расходования подписки\r выдаются новые Adobe аккаунты.",
+  "description": "Микросервис управляющий пользователями Adobe\n и предоставляющие сессионый доступ к подписке.\n В рамках сессии пользователю (не Adobe) по мере расходования подписки\n выдаются новые Adobe аккаунты.",
   "main": "index.js",
+  "type": "module",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "build": "tsc",
+    "start": "node dist/index.js",
+    "dev": "ts-node src/index.ts"
   },
   "keywords": [],
   "author": "",
@@ -12,5 +15,8 @@
   "dependencies": {
     "express": "^4.21.1",
     "prisma": "^5.21.1"
+  },
+  "devDependencies": {
+    "typescript": "^5.6.3"
   }
 }
