@@ -1,0 +1,16 @@
+{
+  "name": "subscription-service",
+  "version": "1.0.0",
+  "description": "Микросервис управляющий пользователями Adobe\r и предоставляющие сессионый доступ к подписке.\r В рамках сессии пользователю (не Adobe) по мере расходования подписки\r выдаются новые Adobe аккаунты.",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "express": "^4.21.1",
+    "prisma": "^5.21.1"
+  }
+}
