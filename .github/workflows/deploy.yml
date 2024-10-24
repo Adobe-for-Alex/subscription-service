@@ -1,0 +1,23 @@
+name: deploy
+on:
+  push:
+    branches:
+      - master
+jobs:
+  deploy:
+    name: deploy
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/cache@v4
+        with:
+          path: ./node_modules
+          key: node_modules-${{ hashFiles('yarn.lock') }}
+          restore-keys: node_modules-
+      - name: Login to Docker Hub
+        run: echo "${{ secrets.DOCKER_HUB_TOKEN }}" | docker login -u ${{ secrets.DOCKER_HUB_USER }} --password-stdin
+      - run: yarn
+      - run: yarn deploy
+        env:
+          REACT_APP_API_BASE: ${{ secrets.API_BASE }}
+          DOCKER_HUB_USER: ${{ secrets.DOCKER_HUB_USER }}
