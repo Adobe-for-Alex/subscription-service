@@ -1,5 +1,5 @@
 services:
-  bot:
+  subscription-service:
     build:
       context: .
       target: develop
@@ -8,7 +8,6 @@ services:
     ports:
       - 8080:8080
     environment:
-      TELEGRAM_BOT_TOKEN: ${TELEGRAM_BOT_TOKEN}
       DATABASE_URL: ${DATABASE_URL}
     volumes:
       - .:/app
