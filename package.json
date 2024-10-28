@@ -1,0 +1,32 @@
+{
+  "name": "subscription-service",
+  "version": "0.0.0",
+  "description": "Микросервис управляющий пользователями Adobe\n и предоставляющие сессионый доступ к подписке.\n В рамках сессии пользователю (не Adobe) по мере расходования подписки\n выдаются новые Adobe аккаунты.",
+  "main": "./src/index.ts",
+  "scripts": {
+    "preinstall": "only-allow pnpm && cp .env.template .env",
+    "postinstall": "pnpm dev:up && pnpm prisma:migrate:apply; pnpm dev:down",
+    "prisma:migrate:new": "prisma migrate dev --create-only",
+    "prisma:migrate:apply": "prisma migrate dev",
+    "prisma:deploy": "prisma migrate deploy",
+    "dev:up": "docker compose up -d",
+    "dev": "pnpm dev:up && docker compose attach subscription-service",
+    "dev:down": "docker compose down",
+    "start:develop": "nodemon -r dotenv/config ./src/index.ts",
+    "start:production": "node dist/index.js",
+    "build": "tsc"
+  },
+  "dependencies": {
+    "express": "^4.21.1",
+    "prisma": "^5.21.1"
+  },
+  "devDependencies": {
+    "@tsconfig/strictest": "^2.0.5",
+    "@types/express": "^5.0.0",
+    "dotenv": "^16.4.5",
+    "nodemon": "^3.1.7",
+    "only-allow": "^1.2.1",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.6.3"
+  }
+}
