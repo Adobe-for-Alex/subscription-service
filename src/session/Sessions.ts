@@ -1,10 +1,8 @@
 import { Session } from './Session'
-import { SessionId } from '../aliases/Aliases'
-import { Mail } from '../mail/Mail'
+import { SessionId } from '../Aliases'
+import { Account } from '../adobe/Account'
 
 export interface Sessions {
-    all(): Promise<Session[]>
-    create(mail: Mail): Promise<Session>
-    withId(id: SessionId): Promise<Session | undefined>
-    delete(id: SessionId): Promise<void>
+  withAccount(account: Account): Promise<Session>  // Replaced create method
+  withId(id: SessionId): Promise<Session | undefined>
 }

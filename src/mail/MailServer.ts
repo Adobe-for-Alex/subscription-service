@@ -1,5 +1,5 @@
-import { Mail } from './Mail'
+import {Mail} from './Mail'
 
 export interface MailServer {
-    create(): Promise<Mail>
+  create(): Promise<Mail>
 }
