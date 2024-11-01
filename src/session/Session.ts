@@ -3,6 +3,6 @@ import {Json} from '../aliases'
 
 export interface Session {
   account(): Promise<Account>
-  asJson(): Promise<Json>
   delete(): Promise<void>
+  asJson(): Promise<Json>
 }
