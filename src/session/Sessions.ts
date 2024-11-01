@@ -1,5 +1,5 @@
 import { Session } from './Session'
-import { SessionId } from '../Aliases'
+import { SessionId } from '../aliases'
 import { Account } from '../adobe/Account'
 
 export interface Sessions {

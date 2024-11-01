@@ -1,5 +1,5 @@
 import {Account} from '../adobe/Account'
-import {Json} from '../Aliases'
+import {Json} from '../aliases'
 
 export interface Session {
   account(): Promise<Account>
