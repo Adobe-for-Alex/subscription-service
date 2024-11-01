@@ -1,8 +1,7 @@
-import {Account} from '../adobe/Account'
 import {Json} from '../aliases'
 
 export interface Session {
-  account(): Promise<Account>
+  create(): Promise<Session>
   delete(): Promise<void>
   asJson(): Promise<Json>
 }
