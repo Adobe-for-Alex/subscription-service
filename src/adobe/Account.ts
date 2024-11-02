@@ -1,6 +1,6 @@
-import {Mail} from '../mail/Mail'
+import Mail from '../mail/Mail'
 
-export interface Account {
+export default interface Account {
   mail(): Promise<Mail>
   subscribed(): Promise<boolean>
 }
