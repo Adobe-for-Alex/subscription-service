@@ -1,14 +1,36 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
-// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
-// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
 
 generator client {
   provider = "prisma-client-js"
 }
 
-datasource db {
-  provider = "postgresql"
-  url      = env("DATABASE_URL")
+model AdobeAccount {
+  id            String    @id @default(uuid())
+  email         String    @unique
+  password      String
+  isActive      Boolean   @default(true)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  sessions      Session[]
+}
+
+model Session {
+  id            String       @id @default(uuid())
+  adobeAccount  AdobeAccount @relation(fields: [accountId], references: [id])
+  accountId     String
+  startedAt     DateTime     @default(now())
+  endedAt       DateTime?
+  isActive      Boolean      @default(true)
+}
+
+model WebhookLog {
+  id            String    @id @default(uuid())
+  sessionId     String
+  accountEmail  String
+  sentAt        DateTime  @default(now())
+  success       Boolean
+  errorMessage  String?
 }
