@@ -25,12 +25,3 @@ model Session {
   endedAt       DateTime?
   isActive      Boolean      @default(true)
 }
-
-model WebhookLog {
-  id            String    @id @default(uuid())
-  sessionId     String
-  accountEmail  String
-  sentAt        DateTime  @default(now())
-  success       Boolean
-  errorMessage  String?
-}
