@@ -8,13 +8,13 @@ generator client {
 }
 
 model AdobeAccount {
-  id            String    @id @default(uuid())
-  email         String    @unique
-  password      String
-  isActive      Boolean   @default(true)
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
-  sessions      Session[]
+  id                String    @id @default(uuid())
+  email             String    @unique
+  password          String
+  subscription      Boolean   @default(true)
+  createdAt         DateTime  @default(now())
+  lastValidationAt  DateTime  @updatedAt
+  sessions          Session[]
 }
 
 model Session {
@@ -23,5 +23,4 @@ model Session {
   accountId     String
   startedAt     DateTime     @default(now())
   endedAt       DateTime?
-  isActive      Boolean      @default(true)
 }
