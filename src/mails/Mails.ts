@@ -1,5 +1,5 @@
 import Mail from '../mail/Mail'
 
-export default interface MailServer {
+export default interface Mails {
   create(): Promise<Mail>
 }
