@@ -7,20 +7,11 @@ generator client {
   provider = "prisma-client-js"
 }
 
-model AdobeAccount {
-  id                String    @id @default(uuid())
-  email             String    @unique
-  password          String
-  subscription      Boolean   @default(true)
-  createdAt         DateTime  @default(now())
-  lastValidationAt  DateTime  @updatedAt
-  sessions          Session[]
-}
-
 model Session {
-  id            String       @id @default(uuid())
-  adobeAccount  AdobeAccount @relation(fields: [accountId], references: [id])
-  accountId     String
-  startedAt     DateTime     @default(now())
+  id            String    @id @default(uuid())
+  email         String
+  inboxId       String?
+  startedAt     DateTime  @default(now())
   endedAt       DateTime?
+  isActive      Boolean   @default(true)
 }
