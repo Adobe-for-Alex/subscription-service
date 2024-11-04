@@ -10,8 +10,8 @@ generator client {
 model Session {
   id            String    @id @default(uuid())
   email         String
-  mailTmId      String?
-  adobeId      String?
+  mailTmId      String
+  adobeId       String
   startedAt     DateTime  @default(now())
   endedAt       DateTime?
 }
