@@ -7,11 +7,41 @@ generator client {
   provider = "prisma-client-js"
 }
 
+/// Storage for MailsInPrisma
+model Mail {
+  /// ID for mail.tm service
+  id        String   @id
+  email     String   @unique
+  password  String
+  createdAt DateTime @default(now())
+  account   Account?
+}
+
+/// Storage for AdobeInPrisma
+model Account {
+  /// ID for internal service adobe-api
+  id             String           @id
+  mailId         String           @unique
+  createdAt      DateTime         @default(now())
+  mail           Mail             @relation(fields: [mailId], references: [id])
+  sessionAccount SessionAccount[]
+}
+
+/// Storage for SessionsInPrisma
 model Session {
-  id            String    @id @default(uuid())
-  email         String
-  mailTmId      String
-  adobeId       String
-  startedAt     DateTime  @default(now())
-  endedAt       DateTime?
+  id        String           @id @default(uuid())
+  endedAt   DateTime?
+  createdAt DateTime         @default(now())
+  accounts  SessionAccount[]
+}
+
+/// History of session accounts
+model SessionAccount {
+  sessionId String
+  accountId String
+  createdAt DateTime @default(now())
+  session   Session  @relation(fields: [sessionId], references: [id])
+  account   Account  @relation(fields: [accountId], references: [id])
+
+  @@id([sessionId, accountId])
 }
