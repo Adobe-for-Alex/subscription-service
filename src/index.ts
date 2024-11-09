@@ -1,63 +1,62 @@
+import { PrismaClient } from '@prisma/client'
 import express from 'express'
+import AdobeApi from './adobe/AdobeApi'
+import SessionsInPrisma from './sessions/SessionsInPrisma'
+import asyncHandler from 'express-async-handler'
+import axios from 'axios'
+import AdobeWithAutoMails from './adobe/AdobeWithAutoMails'
+import TmMails from './mails/TmMails'
 
-type SessionId = string
-type Session = {
-  id: SessionId,
-  email: string,
-  password: string
-}
-const sessions: Session[] = []
-
-// https://stackoverflow.com/a/1349426
-const makeid = (length: number) => {
-  let result = '';
-  const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
-  const charactersLength = characters.length;
-  let counter = 0;
-  while (counter < length) {
-    result += characters.charAt(Math.floor(Math.random() * charactersLength));
-    counter += 1;
-  }
-  return result;
-}
-
-const emailHosts = ['example.com', 'gmail.com', 'yandex.ru', 'tm.com']
-const randomEmailHost = () => emailHosts[Math.floor(emailHosts.length * Math.random())]
-
-const newSession = (): Session => ({
-  id: makeid(32),
-  email: `u${makeid(16)}@${randomEmailHost()}`,
-  password: makeid(24)
-})
-
+const prisma = new PrismaClient()
+const sessions = new SessionsInPrisma(
+  prisma,
+  new AdobeWithAutoMails(
+    new TmMails(prisma),
+    new AdobeApi(new URL('http://adobe-api/'), prisma)
+  )
+)
 const app = express()
 
-app.post('/sessions', (_, res) => {
-  const session = newSession()
-  sessions.push(session)
-  res.json(session.id)
-})
+app.post('/sessions', asyncHandler(async (_, res) => {
+  res.json(await sessions.session().then(x => x.asJson()))
+}))
 
-app.get('/sessions/:id', (req, res) => {
+app.get('/sessions/:id', asyncHandler(async (req, res) => {
   const { id } = req.params
-  const session = sessions.find(x => x.id === id)
+  if (!id) {
+    res.status(400).json('Session ID is undefined')
+    return
+  }
+  const session = await sessions.withId(id)
   if (!session) {
     res.status(404).json('Not found')
     return
   }
-  res.json(session)
-})
+  res.json(await session.asJson())
+}))
 
-app.delete('/sessions/:id', (req, res) => {
+app.delete('/sessions/:id', asyncHandler(async (req, res) => {
   const { id } = req.params
-  const session = sessions.find(x => x.id === id)
+  if (!id) {
+    res.status(400).json('Session ID is undefined')
+    return
+  }
+  const session = await sessions.withId(id)
   if (!session) {
     res.status(404).json('Not found')
     return
   }
-  const index = sessions.indexOf(session)
-  sessions.splice(index, 1)
+  await session.delete()
   res.json('Deleted')
-})
+}))
 
 app.listen(8080, () => console.log('Server started'))
+
+const webhookUrl = process.env['SESSION_UPDATED_WEBHOOK_URL']
+if (!webhookUrl) throw new Error('SESSION_UPDATED_WEBHOOK_URL is undefined')
+setInterval(async () => {
+  await Promise.all((await sessions.all()).map(async x => {
+    if (!await x.updated()) return
+    await axios.post(webhookUrl, await x.asJson())
+  }))
+}, 24 * 3600 * 1000)
