@@ -7,7 +7,17 @@ export default class AdobeWithAutoMails implements Adobe {
     private readonly mails: Mails,
     private readonly origin: Adobe
   ) { }
-  account(address: string, password: string): Promise<Account> {
-    throw new Error("Method not implemented.")
+
+  async account(address: string, password: string): Promise<Account> {
+    const mail = await this.mails.mail(address, password)
+    const account = await this.origin.account(address, password)
+    
+    const originalDelete = account.delete.bind(account)
+    account.delete = async () => {
+      await originalDelete()
+      await mail.delete()
+    }
+    
+    return account
   }
 }
