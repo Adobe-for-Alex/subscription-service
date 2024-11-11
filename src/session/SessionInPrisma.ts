@@ -9,13 +9,80 @@ export default class SessionInPrisma implements Session {
     private readonly id: SessionId,
     private readonly adobe: Adobe
   ) { }
-  updated(): Promise<boolean> {
-    throw new Error("Method not implemented.")
+
+  async updated(): Promise<boolean> {
+    const sessionAccount = await this.prisma.sessionAccount.findFirst({
+      where: { sessionId: this.id },
+      include: {
+        account: {
+          include: {
+            mail: true
+          }
+        }
+      }
+    });
+
+    if (!sessionAccount) return false;
+
+    const { mail } = sessionAccount.account;
+    const adobeAccount = await this.adobe.account(mail.email, mail.password);
+    const hasSubscription = await adobeAccount.subscribed();
+
+    if (!hasSubscription) {
+      await adobeAccount.delete();
+      await this.createNewAccount(mail.email, mail.password);
+      return true;
+    }
+
+    return false;
   }
-  delete(): Promise<void> {
-    throw new Error("Method not implemented.")
+
+  async delete(): Promise<void> {
+    const sessionAccount = await this.prisma.sessionAccount.findFirst({
+      where: { sessionId: this.id },
+      include: {
+        account: {
+          include: {
+            mail: true
+          }
+        }
+      }
+    });
+
+    if (sessionAccount) {
+      const { mail } = sessionAccount.account;
+      const adobeAccount = await this.adobe.account(mail.email, mail.password);
+      await adobeAccount.delete();
+    }
+
+    await this.prisma.session.delete({
+      where: { id: this.id }
+    });
   }
-  asJson(): Promise<Json> {
-    throw new Error("Method not implemented.")
+
+  async asJson(): Promise<Json> {
+    const sessionAccount = await this.prisma.sessionAccount.findFirst({
+      where: { sessionId: this.id },
+      include: {
+        account: {
+          include: {
+            mail: true
+          }
+        }
+      }
+    });
+
+    if (!sessionAccount) throw new Error("Session not found");
+
+    const { mail } = sessionAccount.account;
+    return {
+      id: this.id,
+      email: mail.email,
+      password: mail.password
+    };
+  }
+
+  private async createNewAccount(email: string, password: string): Promise<void> {
+    await this.adobe.account(email, password);
   }
 }
