@@ -40,7 +40,7 @@ describe('TmMails', () => {
     expect(createTokens).toEqual([{ address: 'test@mail.com', password: '123' }])
   })
   it('should return account from prisma', async () => {
-    nock(mailTmApiBaseUrl) // to throw exception for all requests
+    nock(mailTmApiBaseUrl)
     await expect(new TmMails(createPrismaMock<PrismaClient>({
       mail: [
         {
@@ -53,18 +53,33 @@ describe('TmMails', () => {
     })).mail('test@mail.com', '123')).resolves.not.toThrow()
   })
   it('should send HTTP DELETE request to delete account', async () => {
-    const deletedUsers: string[] = []
-    nock(mailTmApiBaseUrl).delete(/\/accounts\/\S+/).reply(200, x => { deletedUsers.push(x) })
+    const accountId = '12345'
+    const token = 'test-token'
+    let receivedHeaders: any
+    let deletePath: string | undefined
+
+    nock(mailTmApiBaseUrl)
+      .post('/token')
+      .reply(201, { token })
+      .delete(`/accounts/${accountId}`)
+      .reply(204, function(path) { 
+        deletePath = path
+        receivedHeaders = this.req.headers
+        return ''
+      })
+
     await new TmMails(createPrismaMock({
       mail: [
         {
-          id: 'mail-3',
+          id: accountId,
           email: 'test123@mail.com',
           password: '123',
           createdAt: new Date()
         }
       ]
-    })).mail('test@mail.com', '123').then(x => x.delete())
-    expect(deletedUsers).toContainEqual(['/accounts/abobasun'])
+    })).mail('test123@mail.com', '123').then(x => x.delete())
+    
+    expect(deletePath).toBe(`/accounts/${accountId}`)
+    expect(receivedHeaders.authorization).toBe(`Bearer ${token}`)
   })
 })
