@@ -12,12 +12,12 @@ export default class AdobeWithAutoMails implements Adobe {
     const mail = await this.mails.mail(address, password)
     const account = await this.origin.account(address, password)
     
-    const originalDelete = account.delete.bind(account)
-    account.delete = async () => {
-      await originalDelete()
-      await mail.delete()
+    return {
+      ...account,
+      delete: async () => {
+        await account.delete()
+        await mail.delete()
+      }
     }
-    
-    return account
   }
 }
