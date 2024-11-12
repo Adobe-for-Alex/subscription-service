@@ -9,6 +9,7 @@
     "prisma:migrate:new": "prisma migrate dev --create-only",
     "prisma:migrate:apply": "prisma migrate dev",
     "prisma:deploy": "prisma migrate deploy",
+    "pretest": "prisma generate",
     "test": "jest",
     "dev:up": "docker compose up -d",
     "dev": "pnpm dev:up && docker compose attach subscription-service",
