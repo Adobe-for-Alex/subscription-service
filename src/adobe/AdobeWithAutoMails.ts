@@ -1,5 +1,6 @@
 import Account from '../account/Account'
 import Mails from '../mails/Mails'
+import { override } from '../utils'
 import Adobe from './Adobe'
 
 export default class AdobeWithAutoMails implements Adobe {
@@ -11,13 +12,11 @@ export default class AdobeWithAutoMails implements Adobe {
   async account(address: string, password: string): Promise<Account> {
     const mail = await this.mails.mail(address, password)
     const account = await this.origin.account(address, password)
-    
-    return {
-      ...account,
+    return override(account, {
       delete: async () => {
         await account.delete()
         await mail.delete()
       }
-    }
+    })
   }
 }
