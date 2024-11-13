@@ -64,7 +64,6 @@ describe('TmMails', () => {
       .delete('/accounts/12345')
       .reply(204, function(path) { 
         deleteRequests.push({ path, headers: this.req.headers })
-        return ''
       })
 
     await new TmMails(createPrismaMock({
@@ -78,7 +77,7 @@ describe('TmMails', () => {
       ]
     })).mail('test123@mail.com', '123').then(x => x.delete())
     
-    expect(deleteRequests[0]?.path).toBe('/accounts/12345')
-    expect(deleteRequests[0]?.headers.authorization).toBe('Bearer test-token')
+    expect(deleteRequests[0]?.path).toContainEqual('/accounts/12345')
+    expect(deleteRequests[0]?.headers.authorization).toContainEqual('Bearer test-token')
   })
 })

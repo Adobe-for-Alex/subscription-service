@@ -1,6 +1,7 @@
 import { PrismaClient } from '@prisma/client'
 import Mails from './Mails'
 import Mail from '../mail/Mail'
+import TmMail from '../mail/TmMail' // Add this import
 import axios from 'axios'
 
 interface MailTmAccount {
@@ -62,17 +63,5 @@ export default class TmMails implements Mails {
       password 
     })
     return auth.token
-  }
-}
-
-class TmMail implements Mail {
-  constructor(private readonly id: string, private readonly token: string, private readonly api: any) {}
-
-  async delete(): Promise<void> {
-    await this.api.delete(`/accounts/${this.id}`, {
-      headers: { 
-        Authorization: `Bearer ${this.token}` 
-      }
-    })
   }
 }
