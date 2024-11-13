@@ -77,7 +77,9 @@ describe('TmMails', () => {
       ]
     })).mail('test123@mail.com', '123').then(x => x.delete())
     
-    expect(deleteRequests[0]?.path).toContainEqual('/accounts/12345')
-    expect(deleteRequests[0]?.headers.authorization).toContainEqual('Bearer test-token')
+    expect(deleteRequests).toContainEqual({
+      path: '/accounts/12345',
+      headers: { authorization: 'Bearer test-token' }
+    })
   })
 })

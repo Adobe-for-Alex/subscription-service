@@ -1,7 +1,7 @@
 import { PrismaClient } from '@prisma/client'
 import Mails from './Mails'
 import Mail from '../mail/Mail'
-import TmMail from '../mail/TmMail' // Add this import
+import TmMail from '../mail/TmMail'
 import axios from 'axios'
 
 interface MailTmAccount {
@@ -20,48 +20,33 @@ export default class TmMails implements Mails {
   ) {}
 
   async mail(address: string, password: string): Promise<Mail> {
-    try {
-      const existingMail = await this.prisma.mail.findFirst({
-        where: { email: address, password }
-      })
-      if (existingMail) {
-        return new TmMail(existingMail.id, existingMail.token, this.api)
-      }
-
-      const { data: account } = await this.api.post<MailTmAccount>('/accounts', { 
-        address, 
-        password 
-      })
-      
-      const token = await this.getToken(address, password)
-
-      await this.prisma.mail.create({
-        data: {
-          id: account.id, 
-          email: address,
-          password: password,
-          createdAt: new Date(),
-          token: token
-        }
-      })
-
-      return new TmMail(account.id, token, this.api)
-    } catch (error) {
-      const existingMail = await this.prisma.mail.findFirst({
-        where: { email: address, password }
-      })
-      if (existingMail) {
-        return new TmMail(existingMail.id, existingMail.token, this.api) 
-      }
-      throw error
+    const existingMail = await this.prisma.mail.findFirst({
+      where: { email: address, password }
+    })
+    if (existingMail) {
+      return new TmMail(existingMail.id, existingMail.token, this.api)
     }
-  }
 
-  private async getToken(address: string, password: string): Promise<string> {
+    const { data: account } = await this.api.post<MailTmAccount>('/accounts', { 
+      address, 
+      password 
+    })
+    
     const { data: auth } = await this.api.post<MailTmToken>('/token', { 
       address, 
       password 
     })
-    return auth.token
+    const token = auth.token
+
+    await this.prisma.mail.create({
+      data: {
+        id: account.id, 
+        email: address,
+        password: password,
+        token: token
+      }
+    })
+
+    return new TmMail(account.id, token, this.api)
   }
 }
