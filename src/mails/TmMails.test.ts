@@ -41,13 +41,16 @@ describe('TmMails', () => {
   })
   it('should return account from prisma', async () => {
     nock(mailTmApiBaseUrl)
+      .post('/token')
+      .reply(201, { token: 'test-token' }) // Mock the token endpoint
     await expect(new TmMails(createPrismaMock<PrismaClient>({
       mail: [
         {
           id: 'mail-1',
           email: 'test@mail.com',
           password: '123',
-          createdAt: new Date()
+          createdAt: new Date(),
+          token: 'test-token' // Ensure token is included
         }
       ]
     })).mail('test@mail.com', '123')).resolves.not.toThrow()

@@ -17,9 +17,10 @@ export default class TmMails implements Mails {
     baseURL: 'https://api.mail.tm'
   })
 
-  constructor(
-    private readonly prisma: PrismaClient
-  ) { }
+  private readonly prisma: PrismaClient;
+  constructor(prisma: PrismaClient) {
+    this.prisma = prisma;
+  }
 
   async mail(address: string, password: string): Promise<Mail> {
     try {
@@ -45,7 +46,8 @@ export default class TmMails implements Mails {
           id: account.id, 
           email: address,
           password,
-          createdAt: new Date()
+          createdAt: new Date(),
+          token: auth.token
         }
       })
 
