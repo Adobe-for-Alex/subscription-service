@@ -40,9 +40,6 @@ describe('TmMails', () => {
     expect(createTokens).toEqual([{ address: 'test@mail.com', password: '123' }])
   })
   it('should return account from prisma', async () => {
-    nock(mailTmApiBaseUrl)
-      .post('/token')
-      .reply(201, { token: 'test-token' })
     await expect(new TmMails(createPrismaMock<PrismaClient>({
       mail: [
         {
@@ -59,8 +56,6 @@ describe('TmMails', () => {
     const deleteRequests: { path: string, headers: any }[] = []
 
     nock(mailTmApiBaseUrl)
-      .post('/token')
-      .reply(201, { token: 'test-token' })
       .delete('/accounts/12345')
       .reply(204, function(path) { 
         deleteRequests.push({ path, headers: this.req.headers })
@@ -72,6 +67,7 @@ describe('TmMails', () => {
           id: '12345',
           email: 'test123@mail.com',
           password: '123',
+          token: 'stored-token',
           createdAt: new Date()
         }
       ]
@@ -79,7 +75,7 @@ describe('TmMails', () => {
     
     expect(deleteRequests).toContainEqual({
       path: '/accounts/12345',
-      headers: { authorization: 'Bearer test-token' }
+      headers: { authorization: 'Bearer stored-token' }
     })
   })
 })
