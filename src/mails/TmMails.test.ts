@@ -40,6 +40,7 @@ describe('TmMails', () => {
     expect(createTokens).toEqual([{ address: 'test@mail.com', password: '123' }])
   })
   it('should return account from prisma', async () => {
+    nock(mailTmApiBaseUrl) // to throw exception for all requests
     await expect(new TmMails(createPrismaMock<PrismaClient>({
       mail: [
         {
