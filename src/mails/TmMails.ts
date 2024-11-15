@@ -17,36 +17,18 @@ export default class TmMails implements Mails {
   constructor(
     private readonly prisma: PrismaClient,
     private readonly api = axios.create({ baseURL: 'https://api.mail.tm' })
-  ) {}
-
+  ) { }
   async mail(address: string, password: string): Promise<Mail> {
-    const existingMail = await this.prisma.mail.findFirst({
+    const mail = await this.prisma.mail.findFirst({
       where: { email: address, password }
-    })
-    if (existingMail) {
-      return new TmMail(existingMail.id, existingMail.token, this.api)
-    }
-
-    const { data: account } = await this.api.post<MailTmAccount>('/accounts', { 
-      address, 
-      password 
-    })
-    
-    const { data: auth } = await this.api.post<MailTmToken>('/token', { 
-      address, 
-      password 
-    })
-    const token = auth.token
-
-    await this.prisma.mail.create({
+    }) || await this.prisma.mail.create({
       data: {
-        id: account.id, 
+        id: await this.api.post<MailTmAccount>('/accounts', { address, password }).then(x => x.data.id),
         email: address,
         password: password,
-        token: token
+        token: await this.api.post<MailTmToken>('/token', { address, password }).then(x => x.data.token)
       }
     })
-
-    return new TmMail(account.id, token, this.api)
+    return new TmMail(mail.id, mail.token, this.api)
   }
 }
