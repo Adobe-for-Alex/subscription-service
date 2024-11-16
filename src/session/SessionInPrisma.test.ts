@@ -67,7 +67,7 @@ describe('SessionInPrisma', () => {
   })
   it('should return json with id, email and password', async () => {
     expect(await new SessionInPrisma(prisma, 'session-1', new FakeAdobe()).asJson())
-      .toContainEqual({
+      .toEqual({
         id: 'session-1',
         email: 'test@mail.com',
         password: '123'

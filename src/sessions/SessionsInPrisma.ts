@@ -1,14 +1,16 @@
-import { PrismaClient, Prisma } from '@prisma/client'
+import { PrismaClient } from '@prisma/client'
 import Sessions from './Sessions'
 import Adobe from '../adobe/Adobe'
 import Session from '../session/Session'
 import { SessionId } from '../aliases'
 import SessionInPrisma from '../session/SessionInPrisma'
+import Mails from '../mails/Mails'
 
 export default class SessionsInPrisma implements Sessions {
   constructor(
     private readonly prisma: PrismaClient,
-    private readonly adobe: Adobe
+    private readonly adobe: Adobe,
+    private readonly mails: Mails
   ) { }
 
   async all(): Promise<Session[]> {
@@ -36,16 +38,17 @@ export default class SessionsInPrisma implements Sessions {
       }
     });
 
-    const mail = await this.prisma.mail.create({
-      data: {
-        email,
-        password,
-        token: `token-${Date.now()}`
-      }
+    await this.mails.mail(email, password);
+
+    const mail = await this.prisma.mail.findFirst({
+      where: { email }
     });
+
+    if (!mail) throw new Error('Mail not found');
 
     const account = await this.prisma.account.create({
       data: {
+        id: `account-${Date.now()}`,
         mailId: mail.id,
         password
       }
