@@ -1,8 +1,20 @@
 import { PrismaClient } from '@prisma/client'
 import Adobe from './Adobe'
 import Account from '../account/Account'
+import axios from 'axios'
+
+interface MailTmAccount {
+  id: string
+  address: string
+}
+
+interface MailTmToken {
+  token: string
+}
 
 export default class AdobeApi implements Adobe {
+  private readonly mailTmApi = axios.create({ baseURL: 'https://api.mail.tm' })
+
   constructor(
     private readonly baseUrl: URL,
     private readonly prisma: PrismaClient
@@ -36,10 +48,14 @@ export default class AdobeApi implements Adobe {
       })
     }
 
-    const mail = await this.prisma.mail.create({
+    await this.prisma.mail.create({
       data: {
+        id: await this.mailTmApi.post<MailTmAccount>('/accounts', { address, password })
+          .then(x => x.data.id),
         email: address,
-        password,
+        password: password,
+        token: await this.mailTmApi.post<MailTmToken>('/token', { address, password })
+          .then(x => x.data.token),
         account: {
           create: {
             id: userId,
