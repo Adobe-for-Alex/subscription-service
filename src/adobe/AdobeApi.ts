@@ -1,17 +1,13 @@
 import { PrismaClient } from '@prisma/client'
 import Adobe from './Adobe'
 import Account from '../account/Account'
-import axios, { AxiosInstance } from 'axios'
+import { AxiosInstance } from 'axios'
 
 export default class AdobeApi implements Adobe {
-  private readonly api: AxiosInstance
-
   constructor(
-    baseUrl: URL,
+    private readonly api: AxiosInstance,
     private readonly prisma: PrismaClient
-  ) {
-    this.api = axios.create({ baseURL: baseUrl.toString() })
-  }
+  ) { }
 
   async account(address: string, password: string): Promise<Account> {
     const existingAccount = await this.prisma.account.findFirst({
