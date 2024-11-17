@@ -17,18 +17,17 @@ describe('AdobeApi', () => {
       .get('/boards')
       .reply(200, [])
 
-    nock('https://api.mail.tm')
-      .post('/accounts')
-      .reply(201, {
+    const prisma = createPrismaMock<PrismaClient>({
+      mail: [{
         id: 'mail-1',
-        address: 'test@mail.com'
-      })
-      .post('/token')
-      .reply(201, {
-        token: 'test-token'
-      })
+        email: 'test@mail.com',
+        password: '123',
+        token: 'test-token',
+        createdAt: new Date()
+      }]
+    })
 
-    await new AdobeApi(new URL('http://adobe-api'), createPrismaMock())
+    await new AdobeApi(new URL('http://adobe-api'), prisma)
       .account('test@mail.com', '123')
 
     expect(createdUsers).toEqual([{
@@ -51,21 +50,18 @@ describe('AdobeApi', () => {
         return data 
       })
 
-    nock('https://api.mail.tm')
-      .post('/accounts')
-      .reply(201, {
+    const prisma = createPrismaMock<PrismaClient>({
+      mail: [{
         id: 'mail-1',
-        address: 'test@mail.com'  
-      })
-      .post('/token') 
-      .reply(201, {
-        token: 'test-token'
-      })
+        email: 'test@mail.com',
+        password: '123',
+        token: 'test-token',
+        createdAt: new Date()
+      }]
+    })
 
-    await new AdobeApi(
-      new URL('http://adobe-api'),
-      createPrismaMock()
-    ).account('test@mail.com', '123')
+    await new AdobeApi(new URL('http://adobe-api'), prisma)
+      .account('test@mail.com', '123')
 
     expect(abobusData).toEqual({
       board: 'board-1'
