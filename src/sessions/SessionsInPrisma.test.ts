@@ -27,15 +27,35 @@ describe('SessionsInPrisma', () => {
     expect(await new SessionsInPrisma(prisma, new FakeAdobe(), fakeMails).all().then(x => x.length)).toBe(0)
   })
   it('should create new session', async () => {
-    const prisma = createPrismaMock<PrismaClient>()
+    const email = `user${Date.now()}@tempmail.com`
+    const fakeMails = new FakeMails([{ address: email, password: '12345' }])
+    const prisma = createPrismaMock<PrismaClient>({
+      mail: [{
+        id: 'mail-1',
+        email,
+        createdAt: new Date()
+      }]
+    })
     const adobe = new FakeAdobe()
-    await new SessionsInPrisma(prisma, adobe, fakeMails).session()
-    expect(prisma.session.count()).toBeGreaterThanOrEqual(1)
+    const sessions = new SessionsInPrisma(prisma, adobe, fakeMails)
+    
+    await sessions.session()
+    expect(await prisma.session.count()).toBeGreaterThanOrEqual(1)
     expect(adobe.createdAccounts.length).toBeGreaterThanOrEqual(1)
   })
   it('should create new account on create new session', async () => {
+    const email = `user${Date.now()}@tempmail.com`
+    const fakeMails = new FakeMails([{ address: email, password: '12345' }])
+    const prisma = createPrismaMock<PrismaClient>({
+      mail: [{
+        id: 'mail-1',
+        email,
+        createdAt: new Date()
+      }]
+    })
     const adobe = new FakeAdobe()
-    await new SessionsInPrisma(createPrismaMock(), adobe, fakeMails).session()
+    const sessions = new SessionsInPrisma(prisma, adobe, fakeMails)
+    await sessions.session()
     expect(adobe.createdAccounts.length).toBeGreaterThanOrEqual(1)
   })
   it('should return undefined if session with id does not exists', async () => {

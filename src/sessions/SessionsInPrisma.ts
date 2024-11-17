@@ -28,41 +28,48 @@ export default class SessionsInPrisma implements Sessions {
   }
 
   async session(): Promise<Session> {
-    const email = `user${Date.now()}@tempmail.com`;
-    const password = Math.random().toString(36).slice(-8);
-
+    const mail = await this.prisma.mail.findFirst({
+      where: {
+        account: null 
+      }
+    });
+  
+    let email: string;
+    let password: string;
+  
+    if (mail) {
+      email = mail.email;
+      password = Math.random().toString(36).slice(-8);
+    } else {
+      email = `user${Date.now()}@tempmail.com`;
+      password = Math.random().toString(36).slice(-8);
+      await this.mails.mail(email, password);
+    }
+  
     const session = await this.prisma.session.create({
       data: {
         id: `adobe-${Date.now()}`,
         createdAt: new Date()
       }
     });
-
-    await this.mails.mail(email, password);
-
-    const mail = await this.prisma.mail.findFirst({
-      where: { email }
-    });
-
-    if (!mail) throw new Error('Mail not found');
-
+  
     const account = await this.prisma.account.create({
       data: {
         id: `account-${Date.now()}`,
-        mailId: mail.id,
+        mailId: mail?.id || (await this.prisma.mail.findFirst({ where: { email } }))!.id,
         password
       }
     });
-
+  
     await this.prisma.sessionAccount.create({
       data: {
         sessionId: session.id,
         accountId: account.id
       }
     });
-
+  
     await this.adobe.account(email, password);
-
+  
     return new SessionInPrisma(this.prisma, session.id, this.adobe);
   }
 
