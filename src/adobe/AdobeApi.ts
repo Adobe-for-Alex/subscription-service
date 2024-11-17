@@ -1,7 +1,7 @@
 import { PrismaClient } from '@prisma/client'
 import Adobe from './Adobe'
 import Account from '../account/Account'
-import axios from 'axios'
+import axios, { AxiosInstance } from 'axios'
 
 interface MailTmAccount {
   id: string
@@ -13,38 +13,36 @@ interface MailTmToken {
 }
 
 export default class AdobeApi implements Adobe {
-  private readonly mailTmApi = axios.create({ baseURL: 'https://api.mail.tm' })
+  private readonly mailTmApi: AxiosInstance
+  private readonly adobeApi: AxiosInstance
 
   constructor(
-    private readonly baseUrl: URL,
+    baseUrl: URL,
     private readonly prisma: PrismaClient
-  ) { }
+  ) {
+    this.mailTmApi = axios.create({ baseURL: 'https://api.mail.tm' })
+    this.adobeApi = axios.create({ baseURL: baseUrl.toString() })
+  }
 
   async account(address: string, password: string): Promise<Account> {
     const existingMail = await this.prisma.mail.findFirst({
       where: { email: address },
       include: { account: true }
     })
-
+    
     if (existingMail?.account) {
       return this.createAccountAdapter(existingMail.account.id)
     }
 
-    const response = await fetch(`${this.baseUrl}/users`, {
-      method: 'POST',
-      body: JSON.stringify({ email: address, password }),
-      headers: { 'Content-Type': 'application/json' }
+    const { data: userId } = await this.adobeApi.post('/users', { 
+      email: address, 
+      password 
     })
-    const userId = JSON.parse(await response.text())
 
-    const boardsResponse = await fetch(`${this.baseUrl}/boards`)
-    const boards = await boardsResponse.json()
-
+    const { data: boards } = await this.adobeApi.get('/boards')
     if (boards.length > 0) {
-      await fetch(`${this.baseUrl}/users/${userId}`, {
-        method: 'PUT',
-        body: JSON.stringify({ board: boards[0] }),
-        headers: { 'Content-Type': 'application/json' }
+      await this.adobeApi.put(`/users/${userId}`, {
+        board: boards[0]
       })
     }
 
@@ -53,7 +51,7 @@ export default class AdobeApi implements Adobe {
         id: await this.mailTmApi.post<MailTmAccount>('/accounts', { address, password })
           .then(x => x.data.id),
         email: address,
-        password: password,
+        password,
         token: await this.mailTmApi.post<MailTmToken>('/token', { address, password })
           .then(x => x.data.token),
         account: {
@@ -71,16 +69,12 @@ export default class AdobeApi implements Adobe {
   private createAccountAdapter(userId: string): Account {
     return {
       subscribed: async () => {
-        const userResponse = await fetch(`${this.baseUrl}/users/${userId}`)
-        const userData = await userResponse.json()
-        
-        const boardResponse = await fetch(`${this.baseUrl}/boards/${userData.board}`)
-        const boardData = await boardResponse.json()
-        
+        const { data: userData } = await this.adobeApi.get(`/users/${userId}`)
+        const { data: boardData } = await this.adobeApi.get(`/boards/${userData.board}`)
         return boardData.subscription
       },
       delete: async () => {
-        await fetch(`${this.baseUrl}/users/${userId}`, { method: 'DELETE' })
+        await this.adobeApi.delete(`/users/${userId}`)
       }
     }
   }
