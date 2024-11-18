@@ -2,6 +2,14 @@ import { PrismaClient } from '@prisma/client'
 import Adobe from './Adobe'
 import Account from '../account/Account'
 import { AxiosInstance } from 'axios'
+import AdobeAccount from '../account/AdobeAccount'
+
+type Board = {
+  id: string,
+  subscription: boolean,
+  user_limit: number,
+  users: string[]
+}
 
 export default class AdobeApi implements Adobe {
   constructor(
@@ -10,55 +18,22 @@ export default class AdobeApi implements Adobe {
   ) { }
 
   async account(address: string, password: string): Promise<Account> {
-    const existingAccount = await this.prisma.account.findFirst({
-      where: { mail: { email: address } }
-    })
-    
-    if (existingAccount) {
-      return this.createAccountAdapter(existingAccount.id)
-    }
-  
-    const { data: userId } = await this.api.post('/users', { 
-      email: address, 
-      password 
-    })
-  
-    const { data: boards } = await this.api.get('/boards')
-    if (boards.length > 0) {
-      await this.api.put(`/users/${userId}`, {
-        board: boards[0]
-      })
-    }
-  
-    const mail = await this.prisma.mail.findFirst({
+    const mail = await this.prisma.mail.findFirstOrThrow({
+      select: { id: true },
       where: { email: address }
     })
-  
-    if (!mail) {
-      throw new Error(`Mail record not found for ${address}`)
-    }
-  
-    await this.prisma.account.create({
-      data: {
-        id: userId,
-        password,
-        mailId: mail.id 
-      }
-    })
-  
-    return this.createAccountAdapter(userId)
-  }
-
-  private createAccountAdapter(userId: string): Account {
-    return {
-      subscribed: async () => {
-        const { data: userData } = await this.api.get(`/users/${userId}`)
-        const { data: boardData } = await this.api.get(`/boards/${userData.board}`)
-        return boardData.subscription
-      },
-      delete: async () => {
-        await this.api.delete(`/users/${userId}`)
-      }
-    }
+    const account = await this.prisma.account.findUnique({
+      where: { mailId: mail.id }
+    }) || await (async () => {
+      const newAccountId = await this.api.post<string>('/users', { email: address, password }).then(x => x.data)
+      const boards = await this.api.get<Board[]>('/boards').then(x => x.data)
+      const board = boards.find(x => x.users.length < x.user_limit)
+      if (!board) throw new Error('No available boards')
+      await this.api.put(`/users/${newAccountId}`, { board: board.id })
+      return await this.prisma.account.create({
+        data: { id: newAccountId, mailId: mail.id, password }
+      })
+    })()
+    return new AdobeAccount(this.api, account.id)
   }
 }

@@ -2,27 +2,65 @@ import nock from 'nock'
 import AdobeApi from './AdobeApi'
 import createPrismaMock from 'prisma-mock'
 import { PrismaClient } from '@prisma/client'
+import axios from 'axios'
+
+const BASE_URL = 'http://adobe-api';
 
 describe('AdobeApi', () => {
   afterEach(() => nock.cleanAll())
   it('should send HTTP POST request to create account if prisma do not contain account', async () => {
     const createdUsers: any[] = []
-    nock('http://adobe-api').post('/users').reply(201, (_, data) => { createdUsers.push(data); return '"abobus"' })
-    await new AdobeApi(new URL('http://adobe-api'), createPrismaMock()).account('test@mail.com', '123')
-    expect(createdUsers).toEqual([{ email: 'test@mail.com', password: '123' }])
+    nock(BASE_URL)
+      .post('/users').reply(201, (_, data) => { createdUsers.push(data); return '"abobus"' })
+      .get('/boards').reply(200, [{
+        id: 'board-1',
+        subscription: true,
+        user_limit: 5,
+        users: []
+      }])
+      .put('/users/abobus').reply(200)
+    await new AdobeApi(
+      axios.create({ baseURL: BASE_URL }),
+      createPrismaMock<PrismaClient>({
+        mail: [
+          {
+            id: 'mail-42',
+            email: 'test@mail.com',
+            password: '123'
+          }
+        ]
+      })
+    ).account('test@mail.com', '123')
+    expect(createdUsers).toContainEqual({ email: 'test@mail.com', password: '123' })
   })
   it('should attach account to existing board after create', async () => {
     let abobusData: any = {}
-    nock('http://adobe-api')
+    nock(BASE_URL)
       .post('/users').reply(201, '"abobus"')
-      .get('/boards').reply(200, ['board-1'])
+      .get('/boards').reply(200, [{
+        id: 'board-1',
+        subscription: true,
+        user_limit: 5,
+        users: []
+      }])
       .put('/users/abobus').reply(200, (_, data) => { abobusData = data })
-    await new AdobeApi(new URL('http://adobe-api'), createPrismaMock()).account('test@mail.com', '123')
-    expect(abobusData).toContainEqual({ board: 'board-1' })
+    await new AdobeApi(
+      axios.create({ baseURL: BASE_URL }),
+      createPrismaMock<PrismaClient>({
+        mail: [
+          {
+            id: 'mail-42',
+            email: 'test@mail.com',
+            password: '123'
+          }
+        ]
+      })
+    ).account('test@mail.com', '123')
+    expect(abobusData).toEqual({ board: 'board-1' })
   })
   it('should return account from prisma', async () => {
-    nock('http://adobe-api') // to throw exception for all requests
-    await expect(new AdobeApi(new URL('http://adobe-api'), createPrismaMock<PrismaClient>({
+    nock(BASE_URL) // to throw exception for all requests
+    await expect(new AdobeApi(axios.create({ baseURL: BASE_URL }), createPrismaMock<PrismaClient>({
       mail: [
         {
           id: 'mail-1',
@@ -42,7 +80,7 @@ describe('AdobeApi', () => {
     })).account('test@mail.com', '123')).resolves.not.toThrow()
   })
   it.each([false, true])('should send HTTP GET request to check account subscription: %s', async x => {
-    nock('http://adobe-api')
+    nock(BASE_URL)
       .get('/users/account-2').reply(200, {
         id: 'abobus',
         email: 'test@mail.com',
@@ -57,11 +95,11 @@ describe('AdobeApi', () => {
           'abobus'
         ]
       })
-    expect(await new AdobeApi(new URL('http://adobe-api'), createPrismaMock({
+    expect(await new AdobeApi(axios.create({ baseURL: BASE_URL }), createPrismaMock({
       mail: [
         {
           id: 'mail-2',
-          email: 'test123@mail.com',
+          email: 'test@mail.com',
           password: '123',
           createdAt: new Date()
         }
@@ -78,12 +116,12 @@ describe('AdobeApi', () => {
   })
   it('should send HTTP DELETE request to delete account', async () => {
     const deletedUsers: string[] = []
-    nock('http://adobe-api').delete(/\/users\/\S+/).reply(200, x => { deletedUsers.push(x) })
-    await new AdobeApi(new URL('http://adobe-api'), createPrismaMock({
+    nock(BASE_URL).delete(/\/users\/\S+/).reply(200, x => { deletedUsers.push(x) })
+    await new AdobeApi(axios.create({ baseURL: BASE_URL }), createPrismaMock({
       mail: [
         {
           id: 'mail-3',
-          email: 'test123@mail.com',
+          email: 'test@mail.com',
           password: '123',
           createdAt: new Date()
         }
@@ -97,6 +135,6 @@ describe('AdobeApi', () => {
         }
       ]
     })).account('test@mail.com', '123').then(x => x.delete())
-    expect(deletedUsers).toContainEqual(['/users/abobasun'])
+    expect(deletedUsers).toContainEqual('/users/abobasun')
   })
 })
