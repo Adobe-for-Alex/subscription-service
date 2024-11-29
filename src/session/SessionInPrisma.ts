@@ -10,33 +10,6 @@ export default class SessionInPrisma implements Session {
     private readonly adobe: Adobe
   ) { }
 
-  async updated(): Promise<boolean> {
-    const sessionAccount = await this.prisma.sessionAccount.findFirst({
-      where: { sessionId: this.id },
-      include: {
-        account: {
-          include: {
-            mail: true
-          }
-        }
-      }
-    });
-
-    if (!sessionAccount) return false;
-
-    const { mail } = sessionAccount.account;
-    const adobeAccount = await this.adobe.account(mail.email, mail.password);
-    const hasSubscription = await adobeAccount.subscribed();
-
-    if (!hasSubscription) {
-      await adobeAccount.delete();
-      await this.createNewAccount(mail.email, mail.password);
-      return true;
-    }
-
-    return false;
-  }
-
   async delete(): Promise<void> {
     const sessionAccount = await this.prisma.sessionAccount.findFirst({
       where: { sessionId: this.id },
@@ -46,7 +19,8 @@ export default class SessionInPrisma implements Session {
             mail: true
           }
         }
-      }
+      },
+      orderBy: { createdAt: 'desc' }
     });
 
     if (sessionAccount) {
@@ -55,8 +29,9 @@ export default class SessionInPrisma implements Session {
       await adobeAccount.delete();
     }
 
-    await this.prisma.session.delete({
-      where: { id: this.id }
+    await this.prisma.session.update({
+      where: { id: this.id },
+      data: { endedAt: new Date() }
     });
   }
 
@@ -80,9 +55,5 @@ export default class SessionInPrisma implements Session {
       email: mail.email,
       password: mail.password
     };
-  }
-
-  private async createNewAccount(email: string, password: string): Promise<void> {
-    await this.adobe.account(email, password);
   }
 }

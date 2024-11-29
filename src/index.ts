@@ -12,7 +12,7 @@ const sessions = new SessionsInPrisma(
   prisma,
   new AdobeWithAutoMails(
     new TmMails(prisma),
-    new AdobeApi(new URL('http://adobe-api/'), prisma)
+    new AdobeApi(axios.create({ baseURL: 'http://adobe-api/' }), prisma)
   )
 )
 const app = express()
@@ -55,8 +55,8 @@ app.listen(8080, () => console.log('Server started'))
 const webhookUrl = process.env['SESSION_UPDATED_WEBHOOK_URL']
 if (!webhookUrl) throw new Error('SESSION_UPDATED_WEBHOOK_URL is undefined')
 setInterval(async () => {
-  await Promise.all((await sessions.all()).map(async x => {
-    if (!await x.updated()) return
-    await axios.post(webhookUrl, await x.asJson())
-  }))
+  const updates = await sessions.allUpdated()
+  for (const session of updates) {
+    await axios.post(webhookUrl, await session.asJson())
+  }
 }, 24 * 3600 * 1000)

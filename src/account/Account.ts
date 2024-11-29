@@ -1,4 +1,4 @@
 export default interface Account {
-  subscribed(): Promise<boolean>
+  email(): Promise<string>
   delete(): Promise<void>
 }
