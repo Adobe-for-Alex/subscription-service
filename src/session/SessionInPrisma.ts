@@ -2,6 +2,7 @@ import { PrismaClient } from '@prisma/client'
 import { Json, SessionId } from '../aliases'
 import Session from './Session'
 import Adobe from '../adobe/Adobe'
+import Account from '../account/Account';
 
 export default class SessionInPrisma implements Session {
   constructor(
@@ -9,6 +10,10 @@ export default class SessionInPrisma implements Session {
     private readonly id: SessionId,
     private readonly adobe: Adobe
   ) { }
+
+  async update(_: Account): Promise<void> {
+    throw new Error('Method not implemented.');
+  }
 
   async delete(): Promise<void> {
     const sessionAccount = await this.prisma.sessionAccount.findFirst({
