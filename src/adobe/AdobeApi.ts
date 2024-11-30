@@ -20,9 +20,9 @@ export default class AdobeApi implements Adobe {
     const account = await this.prisma.account.findUnique({
       where: { mailId: mail.id }
     }) || await (async () => {
-      const newAccountId = await this.api.post<string>('/users', { email: address, password }).then(x => x.data)
+      await this.api.post('/users', { email: address, password })
       return await this.prisma.account.create({
-        data: { id: newAccountId, mailId: mail.id, password }
+        data: { id: address, mailId: mail.id, password }
       })
     })()
     return new AdobeAccount(this.api, account.id)
