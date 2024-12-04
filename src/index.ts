@@ -66,12 +66,14 @@ app.listen(8080, () => console.log('Server started'))
 
 const webhookUrl = process.env['SESSION_UPDATED_WEBHOOK_URL']
 if (webhookUrl) {
-  setInterval(async () => {
+  const updateAll = async () => {
     const updates = await sessions.allUpdated()
     for (const session of updates) {
       await axios.post(webhookUrl, await session.asJson())
     }
-  }, 24 * 3600 * 1000)
+  }
+  updateAll()
+  setInterval(updateAll, 24 * 3600 * 1000)
 } else {
   console.warn('Notification about sessions updates disablead because SESSION_UPDATED_WEBHOOK_URL is undefined')
 }
