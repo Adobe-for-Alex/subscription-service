@@ -9,7 +9,7 @@ export default class AdobeWithAutoMails implements Adobe {
     private readonly origin: Adobe
   ) { }
   async expiredAccounts(): Promise<Account[]> {
-    throw new Error('Method not implemented.')
+    return await this.origin.expiredAccounts()
   }
   async account(address: string, password: string): Promise<Account> {
     const mail = await this.mails.mail(address, password)
