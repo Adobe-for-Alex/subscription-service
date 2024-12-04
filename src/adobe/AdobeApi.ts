@@ -10,7 +10,8 @@ export default class AdobeApi implements Adobe {
     private readonly prisma: PrismaClient
   ) { }
   async expiredAccounts(): Promise<Account[]> {
-    throw new Error('Method not implemented.')
+    const fallenUsers = (await this.api.post<{ id: string, email: string }[]>('/users/check')).data
+    return fallenUsers.map(x => new AdobeAccount(this.api, x.email))
   }
   async account(address: string, password: string): Promise<Account> {
     const mail = await this.prisma.mail.findFirstOrThrow({
