@@ -19,24 +19,23 @@ export default class SessionsInPrisma implements Sessions {
     })).map(x => new SessionInPrisma(this.prisma, x.id, this.adobe))
   }
   async allUpdated(): Promise<Session[]> {
-    return []
+    const expiredAccounts = await this.adobe.expiredAccounts()
+    const expiredSessions = await this.prisma.session.findMany({
+      where: {
+        accounts: {
+          some: { account: { mail: { email: { in: await Promise.all(expiredAccounts.map(x => x.email())) } } } }
+        }
+      }
+    })
+    return await Promise.all(expiredSessions.map(async x => {
+      const session = new SessionInPrisma(this.prisma, x.id, this.adobe)
+      const { email, password } = await this.creditials()
+      await session.update(await this.adobe.account(email, password))
+      return session
+    }))
   }
   async session(): Promise<Session> {
-    const domains = (await axios.get('https://api.mail.tm/domains')).data
-    console.log('Got domains from mail.tm', domains)
-    const list = domains['hydra:member']
-    if (!list) throw new Error('Domain list is undefined')
-    if (list.length === 0) throw new Error('Domain list is empty')
-    const domainEntry = list[0]
-    console.log('Domain entry', domainEntry)
-    const email = `adobus-${+new Date()}@${domainEntry.domain}`
-    const password = generate({
-      length: 8,
-      strict: true,
-      numbers: true,
-      lowercase: true,
-      uppercase: true,
-    })
+    const { email, password } = await this.creditials()
     await this.adobe.account(email, password)
     const accountInPrisma = await this.prisma.account.findFirstOrThrow({
       select: { id: true },
@@ -62,5 +61,23 @@ export default class SessionsInPrisma implements Sessions {
     if (!await this.prisma.session.findFirst({ where: { id } }))
       return undefined
     return new SessionInPrisma(this.prisma, id, this.adobe)
+  }
+  private async creditials(): Promise<{ email: string, password: string }> {
+    const domains = (await axios.get('https://api.mail.tm/domains')).data
+    console.log('Got domains from mail.tm', domains)
+    const list = domains['hydra:member']
+    if (!list) throw new Error('Domain list is undefined')
+    if (list.length === 0) throw new Error('Domain list is empty')
+    const domainEntry = list[0]
+    console.log('Domain entry', domainEntry)
+    const email = `adobus-${+new Date()}@${domainEntry.domain}`
+    const password = generate({
+      length: 8,
+      strict: true,
+      numbers: true,
+      lowercase: true,
+      uppercase: true,
+    })
+    return { email, password }
   }
 }
