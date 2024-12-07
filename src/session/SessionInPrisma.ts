@@ -11,8 +11,42 @@ export default class SessionInPrisma implements Session {
     private readonly adobe: Adobe
   ) { }
 
-  async update(_: Account): Promise<void> {
-    throw new Error('Method not implemented.');
+  async update(account: Account): Promise<void> {
+    const sessionAccount = await this.prisma.sessionAccount.findFirst({
+      where: { sessionId: this.id },
+      include: {
+        account: {
+          include: {
+            mail: true
+          }
+        }
+      },
+      orderBy: { createdAt: 'desc' }
+    });
+
+    if (sessionAccount) {
+      const { mail } = sessionAccount.account;
+      const adobeAccount = await this.adobe.account(mail.email, mail.password);
+      await adobeAccount.delete();
+    }
+    const accountInPrisma = await this.prisma.account.findFirstOrThrow({
+      select: { id: true },
+      where: { mail: { email: await account.email() } }
+    })
+    await this.prisma.session.update({
+      where: { id: this.id },
+      data: {
+        accounts: {
+          create: {
+            account: {
+              connect: {
+                id: accountInPrisma.id
+              }
+            }
+          }
+        }
+      }
+    })
   }
 
   async delete(): Promise<void> {
