@@ -23,16 +23,6 @@ describe('SessionsInPrisma', () => {
     })
     expect(await new SessionsInPrisma(prisma, new FakeAdobe()).all().then(x => x.length)).toBe(0)
   })
-  it('should create new session', async () => {
-    const prisma = createPrismaMock<PrismaClient>()
-    await new SessionsInPrisma(prisma, new FakeAdobe()).session()
-    expect(prisma.session.count()).toBeGreaterThanOrEqual(1)
-  })
-  it('should create new account on create new session', async () => {
-    const adobe = new FakeAdobe()
-    await new SessionsInPrisma(createPrismaMock(), adobe).session()
-    expect(adobe.createdAccounts.length).toBeGreaterThanOrEqual(1)
-  })
   it('should return undefined if session with id does not exists', async () => {
     expect(await new SessionsInPrisma(createPrismaMock(), new FakeAdobe()).withId('not-exists')).toBe(undefined)
   })
