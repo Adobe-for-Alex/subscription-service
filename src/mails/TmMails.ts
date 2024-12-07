@@ -21,14 +21,19 @@ export default class TmMails implements Mails {
   async mail(address: string, password: string): Promise<Mail> {
     const mail = await this.prisma.mail.findFirst({
       where: { email: address, password }
-    }) || await this.prisma.mail.create({
-      data: {
-        id: await this.api.post<MailTmAccount>('/accounts', { address, password }).then(x => x.data.id),
-        email: address,
-        password: password,
-        token: await this.api.post<MailTmToken>('/token', { address, password }).then(x => x.data.token)
-      }
-    })
+    }) || await (async () => {
+      console.log('Create email', address, password)
+      const createdMail = await this.api.post<MailTmAccount>('/accounts', { address, password })
+      console.log('Save email', address, password)
+      return await this.prisma.mail.create({
+        data: {
+          id: createdMail.data.id,
+          email: address,
+          password: password,
+          token: await this.api.post<MailTmToken>('/token', { address, password }).then(x => x.data.token)
+        }
+      })
+    })()
     return new TmMail(mail.id, mail.token, this.api)
   }
 }

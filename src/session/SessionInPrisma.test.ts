@@ -37,29 +37,6 @@ describe('SessionInPrisma', () => {
       }
     ]
   }))
-  it.each([false, true])('should be updated if account has no subscription', async hasSubscription => {
-    expect(await new SessionInPrisma(
-      prisma,
-      'session-1',
-      new FakeAdobe(hasSubscription)
-    ).updated()).toBe(!hasSubscription)
-  })
-  it('should create new account if old account has no subscription', async () => {
-    const adobe = new FakeAdobe(false, [{
-      address: 'test@mail.com',
-      password: '123'
-    }])
-    await new SessionInPrisma(prisma, 'session-1', adobe).updated()
-    expect(adobe.createdAccounts.length).toBeGreaterThanOrEqual(1)
-  })
-  it('should delete old account if old account has no subscription', async () => {
-    const adobe = new FakeAdobe(false, [{
-      address: 'test@mail.com',
-      password: '123'
-    }])
-    await new SessionInPrisma(prisma, 'session-1', adobe).updated()
-    expect(adobe.deletedAccounts.length).toBeGreaterThanOrEqual(1)
-  })
   it('should delete account on delete session', async () => {
     const adobe = new FakeAdobe()
     await new SessionInPrisma(prisma, 'session-1', adobe).delete()
@@ -67,7 +44,7 @@ describe('SessionInPrisma', () => {
   })
   it('should return json with id, email and password', async () => {
     expect(await new SessionInPrisma(prisma, 'session-1', new FakeAdobe()).asJson())
-      .toContainEqual({
+      .toEqual({
         id: 'session-1',
         email: 'test@mail.com',
         password: '123'

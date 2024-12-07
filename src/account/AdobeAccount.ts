@@ -1,21 +1,26 @@
-import { AxiosInstance } from "axios"
+import axios, { AxiosInstance } from "axios"
 import Account from "./Account"
 
 export default class AdobeAccount implements Account {
   constructor(
     private readonly api: AxiosInstance,
-    private readonly accountId: string
+    private readonly accountEmail: string
   ) { }
-
-  async subscribed(): Promise<boolean> {
-    const userResponse = await this.api.get(`/users/${this.accountId}`)
-    const boardId = userResponse.data.board
-    if (!boardId) return false
-    const boardResponse = await this.api.get(`/boards/${boardId}`)
-    return boardResponse.data.subscription
+  async email(): Promise<string> {
+    return this.accountEmail
   }
 
   async delete(): Promise<void> {
-    await this.api.delete(`/users/${this.accountId}`)
+    try {
+      await this.api.delete(`/users/${this.accountEmail}`)
+    } catch (e) {
+      if (!axios.isAxiosError(e)) throw e
+      if (e.status === axios.HttpStatusCode.NotFound) {
+        // ignore
+        return
+      }
+      console.error(e.toString())
+      throw new Error(`Failed to delete account ${this.accountEmail}: ${e.response?.status} ${e.response?.statusText} ${JSON.stringify(e.response?.data)}`)
+    }
   }
 }

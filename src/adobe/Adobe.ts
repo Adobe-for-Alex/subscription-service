@@ -2,6 +2,7 @@ import Account from '../account/Account'
 
 export default interface Adobe {
   account(address: string, password: string): Promise<Account>
+  expiredAccounts(): Promise<Account[]>
 }
 
 export namespace FakeAdobe {
@@ -15,12 +16,11 @@ export class FakeAdobe implements Adobe {
   public readonly createdAccounts: FakeAdobe.Account[] = []
   public readonly deletedAccounts: FakeAdobe.Account[] = []
   constructor(
-    private readonly hasSubscription: boolean = false,
     private readonly existsAccounts: FakeAdobe.Account[] = []
   ) { }
   async account(address: string, password: string): Promise<Account> {
     const adapt = (x: FakeAdobe.Account): Account => ({
-      subscribed: async () => this.hasSubscription,
+      email: async () => x.address,
       delete: async () => {
         this.deletedAccounts.push(x)
         this.existsAccounts.splice(this.existsAccounts.indexOf(x), 1)
@@ -32,5 +32,8 @@ export class FakeAdobe implements Adobe {
     this.createdAccounts.push(newAccount)
     this.existsAccounts.push(newAccount)
     return adapt(newAccount)
+  }
+  async expiredAccounts(): Promise<Account[]> {
+    return []
   }
 }
