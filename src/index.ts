@@ -67,9 +67,16 @@ app.listen(8080, () => console.log('Server started'))
 const webhookUrl = process.env['SESSION_UPDATED_WEBHOOK_URL']
 if (webhookUrl) {
   const updateAll = async () => {
+    console.log('Update session')
     const updates = await sessions.allUpdated()
+    console.log('Candidates', updates)
     for (const session of updates) {
-      await axios.post(webhookUrl, await session.asJson())
+      console.log('Was be updated session', await session.asJson())
+      console.log('Update result', await fetch(webhookUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(await session.asJson()),
+      }))
     }
   }
   updateAll()
