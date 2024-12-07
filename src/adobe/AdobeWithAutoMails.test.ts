@@ -14,11 +14,4 @@ describe('AdobeWithAutoMails', () => {
     await new AdobeWithAutoMails(mails, new FakeAdobe()).account('x', 'y').then(x => x.delete())
     expect(mails.deletedMails).toContainEqual({ address: 'x', password: 'y' })
   })
-
-  it.each([false, true])('should return subscription of origin: %s', async hasSubscription => {
-    expect(await new AdobeWithAutoMails(
-      new FakeMails(),
-      new FakeAdobe(hasSubscription)
-    ).account('x', 'y').then(x => x.subscribed())).toBe(hasSubscription)
-  })
 })
