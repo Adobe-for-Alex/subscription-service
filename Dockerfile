@@ -1,4 +1,4 @@
-FROM node:20-alpine AS base
+FROM node:20-alpine3.20 AS base
 RUN npm install --global pnpm
 WORKDIR /app
 EXPOSE 8080
@@ -11,6 +11,7 @@ COPY node_modules node_modules
 COPY package.json pnpm-lock.yaml tsconfig.json ./
 COPY prisma prisma
 COPY src src
+RUN pnpx prisma generate
 RUN pnpm build
 
 FROM base AS production
