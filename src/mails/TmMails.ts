@@ -22,8 +22,9 @@ export default class TmMails implements Mails {
     const mail = await this.prisma.mail.findFirst({
       where: { email: address, password }
     }) || await (async () => {
-      console.log('Create email', address, password)
+      console.log('Create mail', address, password)
       const createdMail = await this.api.post<MailTmAccount>('/accounts', { address, password })
+      console.log('Created mail', createdMail.data)
       console.log('Save email', address, password)
       return await this.prisma.mail.create({
         data: {

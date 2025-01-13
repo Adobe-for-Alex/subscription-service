@@ -6,6 +6,7 @@ import { SessionId } from '../aliases'
 import SessionInPrisma from '../session/SessionInPrisma'
 import axios from 'axios'
 import { generate } from 'generate-password'
+import { adjectives, animals, colors, uniqueNamesGenerator } from 'unique-names-generator'
 
 export default class SessionsInPrisma implements Sessions {
   constructor(
@@ -70,7 +71,13 @@ export default class SessionsInPrisma implements Sessions {
     if (list.length === 0) throw new Error('Domain list is empty')
     const domainEntry = list[0]
     console.log('Domain entry', domainEntry)
-    const email = `adobus-${+new Date()}@${domainEntry.domain}`
+    const uniqueId = new Date().getTime().toString(16).toLowerCase()
+    const name = uniqueNamesGenerator({
+      dictionaries: [adjectives, colors, animals],
+      style: 'lowerCase',
+      separator: '',
+    })
+    const email = `${uniqueId}${name}@${domainEntry.domain}`
     const password = generate({
       length: 8,
       strict: true,
