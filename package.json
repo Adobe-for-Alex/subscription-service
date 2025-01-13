@@ -16,7 +16,8 @@
     "dev:down": "docker compose down",
     "start:develop": "nodemon -r dotenv/config ./src/index.ts",
     "start:production": "node dist/index.js",
-    "build": "tsc"
+    "build": "tsc",
+    "deploy": "TARGET=production docker compose build && docker compose push"
   },
   "dependencies": {
     "@prisma/client": "5.21.1",
