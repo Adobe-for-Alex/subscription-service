@@ -9,6 +9,8 @@ services:
     ports:
       - 8080:8080
     environment:
+      ADOBE_API_URL: http://fake
+      SESSION_UPDATED_WEBHOOK_URL: http://consumer1;http://consumer2;http://consumer3
       DATABASE_URL: ${DATABASE_URL}
     volumes:
       - .:/app
