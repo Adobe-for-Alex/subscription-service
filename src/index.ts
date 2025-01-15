@@ -6,15 +6,20 @@ import asyncHandler from 'express-async-handler'
 import axios from 'axios'
 import AdobeWithAutoMails from './adobe/AdobeWithAutoMails'
 import TmMails from './mails/TmMails'
+import { loadConfig } from './config'
+import { inspect } from 'util'
 
-const adobeApiUrl = process.env['ADOBE_API_URL']
-if (!adobeApiUrl) throw new Error('ADOBE_API_URL is undefined')
+const config = loadConfig()
+console.log('Config', inspect(config, {
+
+}))
+
 const prisma = new PrismaClient()
 const sessions = new SessionsInPrisma(
   prisma,
   new AdobeWithAutoMails(
     new TmMails(prisma),
-    new AdobeApi(axios.create({ baseURL: adobeApiUrl }), prisma)
+    new AdobeApi(axios.create({ baseURL: config.adobeApi.toString() }), prisma)
   )
 )
 const app = express()
@@ -76,29 +81,33 @@ app.use((err: Error, _1: Request, res: Response, _2: NextFunction) => {
 
 app.listen(8080, () => console.log('Server started'))
 
-const webhookUrl = process.env['SESSION_UPDATED_WEBHOOK_URL']
-if (webhookUrl) {
-  const updateAll = async () => {
-    while (serviceBusy) await new Promise(r => setTimeout(r, 1000))
-    try {
-      serviceBusy = true
-      console.log('Update session')
-      const updates = await sessions.allUpdated()
-      console.log('Candidates', updates)
-      for (const session of updates) {
-        console.log('Was be updated session', await session.asJson())
-        console.log('Update result', await fetch(webhookUrl, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(await session.asJson()),
-        }))
-      }
-    } finally {
-      serviceBusy = false
+const updateAll = async () => {
+  while (serviceBusy) await new Promise(r => setTimeout(r, 1000))
+  try {
+    serviceBusy = true
+    console.log('Update session')
+    const updates = await sessions.allUpdated()
+    console.log('Candidates', updates)
+    for (const session of updates) {
+      console.log('Was be updated session', await session.asJson())
+      await Promise.all(config.updateConsumers.map(async consumer => {
+        console.log('Send update to', consumer)
+        try {
+          await fetch(consumer, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(await session.asJson()),
+          })
+        } catch (e) {
+          console.error('Failed to send update to', consumer)
+        }
+      }))
     }
+  } catch (e) {
+    console.error('Failed while update sessions', e)
+  } finally {
+    serviceBusy = false
   }
-  updateAll()
-  setInterval(updateAll, 24 * 3600 * 1000)
-} else {
-  console.warn('Notification about sessions updates disablead because SESSION_UPDATED_WEBHOOK_URL is undefined')
 }
+updateAll()
+setInterval(updateAll, 24 * 3600 * 1000)
